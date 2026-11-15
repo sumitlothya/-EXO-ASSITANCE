@@ -1,4 +1,7 @@
 const { app, BrowserWindow, screen } = require('electron');
+const path = require('path');
+
+require('./files.cjs'); // file open/move handlers
 
 const URL = 'http://localhost:5173/';
 
@@ -29,6 +32,10 @@ function createChatWindow() {
     title: 'EXO ASSISTANCE',
     autoHideMenuBar: true,
     backgroundColor: '#0f0f1a',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+    },
   });
 
   chat.loadURL(URL);

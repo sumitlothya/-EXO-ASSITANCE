@@ -9,7 +9,7 @@ export default function useVoice(onResult) {
   const callbackRef = useRef(onResult);
   const [listening, setListening] = useState(false);
 
-  // Always call the latest callback without recreating the recognizer
+  
   callbackRef.current = onResult;
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function useVoice(onResult) {
 
   const start = () => {
     if (!recRef.current || listening) return;
-    window.speechSynthesis.cancel(); // stop Haru talking so she doesn't hear herself
+    window.speechSynthesis.cancel(); 
     try {
       recRef.current.start();
       setListening(true);
@@ -51,16 +51,50 @@ export default function useVoice(onResult) {
   return { listening, start, stop };
 }
 
+
+let voiceProfile = {
+  names: ["Zira", "Aria", "Jenny", "Michelle", "Sonia", "Libby", "Hazel", "Samantha"],
+  pitch: 1.2,
+  rate: 1,
+};
+
+
+export function setVoiceProfile(profile) {
+  if (profile) voiceProfile = { ...voiceProfile, ...profile };
+}
+
+function pickVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  for (const name of voiceProfile.names) {
+    const v = voices.find((v) => v.name.includes(name));
+    if (v) return v;
+  }
+  
+  return (
+    voices.find((v) => v.lang.startsWith("en") && /female/i.test(v.name)) ||
+    voices.find((v) => v.lang.startsWith("en")) ||
+    null
+  );
+}
+
+
+if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () =>
+    window.speechSynthesis.getVoices();
+}
+
 export function speak(text) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
 
-  // remove markdown symbols so she doesn't read "asterisk asterisk"
   const clean = text.replace(/[*_`#>~]/g, "").replace(/\s+/g, " ").trim();
 
   const u = new SpeechSynthesisUtterance(clean);
-  u.rate = 1;
-  u.pitch = 1.2;
+  const voice = pickVoice();
+  if (voice) u.voice = voice;
+  u.rate = voiceProfile.rate;
+  u.pitch = voiceProfile.pitch;
   window.speechSynthesis.speak(u);
 }
 

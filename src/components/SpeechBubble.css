@@ -1,8 +1,8 @@
-/* The parent (character area) must have position: relative */
+
 .haru-wrap {
   position: absolute;
   left: 50%;
-  bottom: 80%;              /* raise/lower this to sit above her head */
+  bottom: 80%;             
   transform: translateX(-50%) translateY(8px);
   width: 260px;
   max-width: 90%;
@@ -37,7 +37,7 @@
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
 }
 
-/* little tail pointing down to her head */
+
 .haru-bubble::after {
   content: "";
   position: absolute;

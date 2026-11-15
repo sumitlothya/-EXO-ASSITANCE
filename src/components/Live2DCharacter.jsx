@@ -1,37 +1,31 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as PIXI from "pixi.js";
 import { Live2DModel } from "pixi-live2d-display/cubism4";
+import { CHARACTERS } from "../characters";
 
 window.PIXI = PIXI;
-
 
 const IS_PET =
   new URLSearchParams(window.location.search).get("mode") === "pet";
 
-
-const LOCAL_MODEL = "/live2d/Haru/Haru.model3.json";
-
-
-const FALLBACK_MODEL =
-  "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json";
-
-
 const CANVAS_W = IS_PET ? 400 : 800;
 const CANVAS_H = IS_PET ? 650 : 900;
 
-async function pickModelUrl() {
+async function pickModelUrl(character) {
   try {
-    const res = await fetch(LOCAL_MODEL);
-    if (res.ok) return LOCAL_MODEL;
+    const res = await fetch(character.model);
+    if (res.ok) return character.model;
   } catch {
-    
+  
   }
-  return FALLBACK_MODEL;
+  if (character.fallback) return character.fallback;
+  throw new Error(`Model not found: ${character.model}`);
 }
 
-function Live2DCharacter() {
+function Live2DCharacter({ characterId = "haru" }) {
+  const character = CHARACTERS[characterId] || CHARACTERS.haru;
   const canvasRef = useRef(null);
-  const [status, setStatus] = useState("Loading Haru...");
+  const [status, setStatus] = useState(`Loading ${character.name}...`);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,7 +50,7 @@ function Live2DCharacter() {
           antialias: true,
         });
 
-        const url = await pickModelUrl();
+        const url = await pickModelUrl(character);
         model = await Live2DModel.from(url);
 
         if (cancelled) {
@@ -64,11 +58,11 @@ function Live2DCharacter() {
           return;
         }
 
-        
-        const scale = Math.min(
-  (CANVAS_W * 0.9) / model.width,
-  (CANVAS_H * (IS_PET ? 0.7 : 0.95)) / model.height
-);
+        const scale =
+          Math.min(
+            (CANVAS_W * 0.9) / model.width,
+            (CANVAS_H * (IS_PET ? 0.7 : 0.95)) / model.height
+          ) * (character.scale || 1);
         model.scale.set(scale);
         model.anchor.set(0.5, 1);
         model.x = CANVAS_W / 2;
@@ -77,13 +71,13 @@ function Live2DCharacter() {
         app.stage.addChild(model);
 
         setStatus(
-          url === LOCAL_MODEL
-            ? "Haru is ready"
-            : "Haru is ready (using test model)"
+          url === character.model
+            ? `${character.name} is ready`
+            : `${character.name} is ready (using test model)`
         );
       } catch (error) {
-        console.error("Haru Live2D error:", error);
-        if (!cancelled) setStatus(`Haru error: ${error.message}`);
+        console.error(`${character.name} Live2D error:`, error);
+        if (!cancelled) setStatus(`${character.name} error: ${error.message}`);
       }
     }
 
@@ -93,7 +87,7 @@ function Live2DCharacter() {
       cancelled = true;
       if (app) app.destroy(false, { children: true });
     };
-  }, []);
+  }, [character]);
 
   return (
     <div className="live2d-container">
